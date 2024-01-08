@@ -1,66 +1,26 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:bloc_practice/auth_bloc.dart';
 import 'package:flutter/material.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'home_page.dart';
-
-class LoginPage extends StatefulWidget {
+class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
-}
-
-class _LoginPageState extends State<LoginPage> {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  User? _user;
-
-  @override
-  void initState() {
-    super.initState();
-    _auth.authStateChanges().listen((event) {
-      _user = event;
-    });
-  }
-
-  Future<dynamic> signInWithGoogle() async {
-    try {
-      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-
-      final GoogleSignInAuthentication? googleAuth =
-          await googleUser?.authentication;
-
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth?.accessToken,
-        idToken: googleAuth?.idToken,
-      );
-
-      return await _auth.signInWithCredential(credential);
-    } on Exception catch (e) {
-      print('exception->$e');
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final AuthBloc authBloc = BlocProvider.of<AuthBloc>(context);
     return Scaffold(
       body: Center(
-        child: ElevatedButton(
-          onPressed: () async {
-            await signInWithGoogle();
-            if (mounted) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => HomePage(
-                    user: _user!,
-                    auth: _auth,
-                  ),
-                ),
-              );
-            }
+        child: BlocBuilder<AuthBloc, AuthState>(
+          builder: (context, state) {
+            return ElevatedButton(
+              onPressed: () async {
+                if (state.user == null) {
+                  authBloc.add(AuthEvent.signIn);
+                }
+              },
+              child: const Text('Sign in'),
+            );
           },
-          child: const Text('Login'),
         ),
       ),
     );
